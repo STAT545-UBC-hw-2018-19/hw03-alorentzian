@@ -1,0 +1,147 @@
+---
+title: "HW03"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+First I will bring in my data and load my packages
+
+```{r}
+library(gapminder)
+library(tidyverse)
+library(ggplot2)
+```
+
+I'm going to focus on gdpPercap and get some more information like min and max per continent.
+```{r min_max_gdpPercap}
+gapminder %>%
+  group_by(continent) %>% 
+  summarize(min = min(gdpPercap),
+            max = max(gdpPercap))
+```
+
+I can see that Asia has the highest gdpPercap and Africa has the lowest. 
+
+Now I will look at the spread within each continent by looking at attributes like variance and standard deviation
+
+```{r gdp_spread}
+gapminder %>%
+  group_by(continent) %>% 
+  summarize(var = var(gdpPercap),
+            sd = sd(gdpPercap))
+```
+
+Now I will calculate at trimmed mean for  lifeExp by year. I will trim the data removing 10% of the extreme values 
+
+```{r trimmed_mean}
+gapminder %>% 
+  group_by(year) %>% 
+  summarize(mean_lifeExp = mean(lifeExp, trim = .10))
+```
+
+Now I will look at how life expectancy is chaning over time between the continents
+
+```{r change_in_LifeExp_over_time}
+gapminder %>% 
+  group_by(continent, year) 
+
+```
+Since this is difficult to visualize I will try a few graphs to make it easier to see.
+
+
+```{r dot_Plot_LifeExp_Year_colorbycontinent}
+gapminder %>% 
+  ggplot(aes(year, lifeExp)) +
+  geom_point(aes(color=continent))
+```
+This kind of works but lets see if something can work better.
+
+
+```{r dotplot_LifeExp_year_separatebyContinent}
+gapminder %>% 
+  ggplot(aes(year,lifeExp)) +
+  geom_point()+
+  facet_wrap( ~ continent)
+```
+It is easier to visualize the trends this way. Maybe summarizing the data in a box plot will look even better.
+```{r boxplot_LifeExp_Year_Continent}
+gapminder %>% 
+  ggplot(aes(year,lifeExp)) +
+  geom_boxplot(aes(group=year))+
+  facet_wrap( ~ continent)
+```
+I think this is the best plot because it shows a good summary of lifeExp for each continent over the year and is clear and easy to understand. 
+
+Now I will look at low life expectancy by country over time. First, I will calculate the world wide median than count how many countries have a life expectancy lower than the median for each year.
+
+```{r median_lifeExp_worldwide}
+a <- gapminder %>% 
+  summarize(median(lifeExp))
+print(a)
+ 
+  
+```
+
+The overall median is 60.7125. I will assign this value to variable a.
+```{r life_expectancy_change_over_time}
+below_median_life_expectancy <- gapminder %>% 
+  group_by(country, year) %>% 
+  filter(lifeExp < a) %>% select(c(country,year))
+
+below_median_life_expectancy %>% ggplot(aes(x=year)) + geom_bar()
+```
+Now I will do some exploration to find a country with an intersting story. I think a country with a samll population could be interesting so I will try to find a country with the smallest average population
+```{r min_population}
+gapminder %>%
+  group_by(country) %>% 
+  mutate(min = min(pop)) %>%
+  arrange(min)
+
+```
+I'm going to investigate Sao Tome and Principe. Instead of typing that out repeatedly I wil first assign it a nickname
+
+```{r assign_variable}
+STP <- "Sao Tome and Principe"
+```
+
+NOw I will look at the comparison between min and max pop
+```{r miv_Vs_max_STP}
+gapminder %>% 
+  summarize(STP, min(pop),
+            max(pop),
+            var(pop))
+
+```
+
+That seems to be a very broad distribution. I will try to plot the data to see if there are any trends over time.
+
+```{rlinegraph_popVstime}
+gapminder %>%
+  filter(country == STP) %>% 
+  ggplot(aes(year, pop)) +
+  geom_line()
+  
+```
+
+It looks like the population steadily increased over the years. I will see if LifeExp follows the same trend
+
+```{r linegraph_lifeExpVsTime}
+gapminder %>%
+  filter(country == STP) %>% 
+  ggplot(aes(year, lifeExp)) +
+  geom_line()
+```
+
+It does follow a somewhat similar trend in that it increases greatly over the years. 
+
+
+I will try the extra exercises.
+```{r}
+gtbl <- tbl_df(gapminder)
+ggplot(gtbl, aes(x = continent, y = gdpPercap, color = continent)) +
+  geom_point() + (ggtitle("GDP per cap by continent"))
+```
+
+I have the plot but I am not sure why the table did not work
